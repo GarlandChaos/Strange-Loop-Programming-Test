@@ -4,9 +4,15 @@ using UnityEngine;
 
 public class MazeManager : MonoBehaviour
 {
+    public static MazeManager instance = null;
     [SerializeField]
     TextAsset test = null;    
     Cell[] maze;
+    public Cell[] _Maze { get => maze; }
+    int mazeWidth = 0;
+    public int _MazeWidth { get => mazeWidth; }
+    int mazeHeight = 0;
+    public int _MazeHeight { get => mazeHeight; }
     [SerializeField]
     PlayerController playerGO = null;
     [SerializeField]
@@ -17,6 +23,19 @@ public class MazeManager : MonoBehaviour
     Cell cellGO = null;
     [SerializeField]
     Cell exitCellGO = null;
+
+    private void Awake()
+    {
+        if(instance == null)
+        {
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -48,11 +67,11 @@ public class MazeManager : MonoBehaviour
         //R - Wall Right
 
         string[] textValues = test.text.Split(" ");
-        int width = int.Parse(textValues[0]);
-        int heigth = int.Parse(textValues[1]);
+        mazeWidth = int.Parse(textValues[0]);
+        mazeHeight = int.Parse(textValues[1]);
         int playerPosition = int.Parse(textValues[2]);
         int minotaurPosition = int.Parse(textValues[3]);
-        int arraySize = width * heigth;
+        int arraySize = mazeWidth * mazeHeight;
         maze = new Cell[arraySize];
         Quaternion rotation = Quaternion.identity;
         Vector3 cellPos = Vector3.zero;
@@ -67,7 +86,7 @@ public class MazeManager : MonoBehaviour
         int mazeIterator = 0;
         for (int i = 4; i < maxIterator; i++)
         {
-            if(columnCount == width)
+            if(columnCount == mazeWidth)
             {
                 columnCount = 0;
                 cellPos -= new Vector3(0f, 0f, sizeCell);
@@ -122,11 +141,13 @@ public class MazeManager : MonoBehaviour
                     maze[mazeIterator]._WallRight = true;
                 }
             }
-
-            Instantiate(playerGO, maze[playerPosition].transform.position , rotation);
-            Instantiate(minotaurGO, maze[minotaurPosition].transform.position, rotation);
-            
             mazeIterator++;
         }
+
+        PlayerController player = Instantiate(playerGO, maze[playerPosition].transform.position, rotation);
+        player._CurrentPositionIndex = playerPosition;
+        MinotaurController minotaur = Instantiate(minotaurGO, maze[minotaurPosition].transform.position, rotation);
+        minotaur._CurrentPositionIndex = minotaurPosition;
+        minotaur._Player = player;
     }
 }
