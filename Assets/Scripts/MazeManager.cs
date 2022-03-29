@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class MazeManager : MonoBehaviour
 {
-    public static MazeManager instance = null;
-    [SerializeField]
-    TextAsset test = null;    
+    public static MazeManager instance = null;  
     Cell[] maze;
     public Cell[] _Maze { get => maze; }
+    [SerializeField]
+    GameObject mazeContainer = null;
     int mazeWidth = 0;
     public int _MazeWidth { get => mazeWidth; }
     int mazeHeight = 0;
@@ -23,6 +23,12 @@ public class MazeManager : MonoBehaviour
     Cell cellGO = null;
     [SerializeField]
     Cell exitCellGO = null;
+    int playerPositionIndex = 0;
+    int minotaurPositionIndex = 0;
+    public int _PlayerPositionIndex { get => playerPositionIndex; }
+    public int _MinotaurPositionIndex { get => minotaurPositionIndex; }
+    bool controllersInstantiated = false;
+    public bool _ControllersInstantiated { get => controllersInstantiated; }
 
     private void Awake()
     {
@@ -37,21 +43,9 @@ public class MazeManager : MonoBehaviour
         }
     }
 
-    // Start is called before the first frame update
-    void Start()
+    public void CreateMaze(TextAsset textAsset)
     {
-        CreateMaze(test);
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-    void CreateMaze(TextAsset textAsset)
-    {
-        Debug.Log(test.text);
+        Debug.Log(textAsset.text);
         //first value: Width;
         //second value: Height;
         //third value: Player position;
@@ -65,22 +59,24 @@ public class MazeManager : MonoBehaviour
         //D - Wall Down
         //L - Wall Left
         //R - Wall Right
+        //N - NOWALL
 
-        string[] textValues = test.text.Split(" ");
+        Transform[] children = mazeContainer.GetComponentsInChildren<Transform>();
+        for (int i = 1; i < children.Length; i++)
+        {
+            Destroy(children[i].gameObject);
+        }
+
+        string[] textValues = textAsset.text.Split(" ");
         mazeWidth = int.Parse(textValues[0]);
         mazeHeight = int.Parse(textValues[1]);
-        int playerPosition = int.Parse(textValues[2]);
-        int minotaurPosition = int.Parse(textValues[3]);
+        playerPositionIndex = int.Parse(textValues[2]);
+        minotaurPositionIndex = int.Parse(textValues[3]);
         int arraySize = mazeWidth * mazeHeight;
         maze = new Cell[arraySize];
         Quaternion rotation = Quaternion.identity;
         Vector3 cellPos = Vector3.zero;
         float sizeCell = cellGO.GetComponent<MeshFilter>().sharedMesh.bounds.size.x * cellGO.transform.localScale.x;
-        //foreach(string s in textValues)
-        //{
-        //    Debug.Log(s);
-        //}
-
         int columnCount = 0;
         int maxIterator = arraySize + 4;
         int mazeIterator = 0;
@@ -105,6 +101,10 @@ public class MazeManager : MonoBehaviour
                 cell._Value = 1;
             }
             maze[mazeIterator] = cell;
+            if(cell != null)
+            {
+                cell.gameObject.transform.SetParent(mazeContainer.transform);
+            }
             columnCount++;
             mazeIterator++;
         }
@@ -120,6 +120,7 @@ public class MazeManager : MonoBehaviour
                     GameObject wall = Instantiate(wallGO, wallPos, rotation);
                     wall.transform.Rotate(0f, 90f, 0f);
                     maze[mazeIterator]._WallUp = true;
+                    wall.gameObject.transform.SetParent(mazeContainer.transform);
                 }
                 if (textValues[i].Contains("D"))
                 {
@@ -127,27 +128,34 @@ public class MazeManager : MonoBehaviour
                     GameObject wall = Instantiate(wallGO, wallPos, rotation);
                     wall.transform.Rotate(0f, 90f, 0f);
                     maze[mazeIterator]._WallDown = true;
+                    wall.gameObject.transform.SetParent(mazeContainer.transform);
                 }
                 if (textValues[i].Contains("L"))
                 {
                     Vector3 wallPos = maze[mazeIterator].transform.position - Vector3.right * sizeCell / 2;
-                    Instantiate(wallGO, wallPos, rotation);
+                    GameObject wall = Instantiate(wallGO, wallPos, rotation);
                     maze[mazeIterator]._WallLeft = true;
+                    wall.gameObject.transform.SetParent(mazeContainer.transform);
                 }
                 if (textValues[i].Contains("R"))
                 {
                     Vector3 wallPos = maze[mazeIterator].transform.position + Vector3.right * sizeCell / 2;
-                    Instantiate(wallGO, wallPos, rotation);
+                    GameObject wall = Instantiate(wallGO, wallPos, rotation);
                     maze[mazeIterator]._WallRight = true;
+                    wall.gameObject.transform.SetParent(mazeContainer.transform);
                 }
             }
             mazeIterator++;
         }
 
-        PlayerController player = Instantiate(playerGO, maze[playerPosition].transform.position, rotation);
-        player._CurrentPositionIndex = playerPosition;
-        MinotaurController minotaur = Instantiate(minotaurGO, maze[minotaurPosition].transform.position, rotation);
-        minotaur._CurrentPositionIndex = minotaurPosition;
-        minotaur._Player = player;
+        if (!controllersInstantiated)
+        {
+            PlayerController player = Instantiate(playerGO, maze[playerPositionIndex].transform.position, rotation);
+            player._CurrentPositionIndex = playerPositionIndex;
+            MinotaurController minotaur = Instantiate(minotaurGO, maze[minotaurPositionIndex].transform.position, rotation);
+            minotaur._CurrentPositionIndex = minotaurPositionIndex;
+            minotaur._Player = player;
+            controllersInstantiated = true;
+        }
     }
 }

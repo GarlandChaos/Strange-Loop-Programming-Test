@@ -10,4 +10,5 @@ public interface IController
     public bool Move();
     public bool Wait();
     public void ReadyToMove();
+    public void ResetController();
 }
